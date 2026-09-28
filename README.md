@@ -89,6 +89,115 @@ Sequences: 20,000
 Positive sequences: 9,932
 ```
 
+## Dataset Schema and Sample
+
+The synthetic generator produces a long-format CSV where each row is one KPM indication frame from one sequence. Sequences alternate between clear-path (label 0) and blockage (label 1 at the final frame only).
+
+```
+### Data Dictionary
+Column	Type	Range (clear)	Range (blockage)	Description
+sequence_id	int	0 – 19,999	0 – 19,999	Which synthetic sequence this frame belongs to
+frame_idx	int	0 – 10	0 – 10	Position within the sequence
+label	int	0	0, except 1 at final frame	1 if blockage occurs within horizon
+rlc_delay_dl	float	1.1 – 1.7 ms	rises to 7 – 9 ms	RLC SDU downlink delay
+rlc_drop_rate	float	0.001 – 0.01	rises to 0.25 – 0.30	Fraction of RLC packets dropped
+harq_retx_ratio	float	0.01 – 0.05	rises to 0.45 – 0.50	HARQ retransmission ratio
+prb_utilization	float	0.60 – 0.85	drops to 0.30 – 0.45	Physical resource block utilization
+ue_buffer_occupancy	float	1200 – 2100 bytes	rises to 2200 – 2900	UE buffer occupancy
+rssi_dbm	float	−77 to −82 dBm	drops to −92 to −98 dBm	Received signal strength
+sinr_db	float	20 – 25 dB	drops to 6 – 11 dB	Signal-to-interference-plus-noise ratio
+doppler_hz	float	−6 to +5 Hz	−9 to −16 Hz	Doppler shift
+Sample Data (50 rows)
+Five representative sequences — three clear-path (IDs 0, 1, 3) and two blockage (IDs 2, 4). The degradation signature is visible in the final frames of the blockage sequences.
+
+csv
+sequence_id,frame_idx,label,rlc_delay_dl,rlc_drop_rate,harq_retx_ratio,prb_utilization,ue_buffer_occupancy,rssi_dbm,sinr_db,doppler_hz
+0,0,0,1.3201,0.0052,0.0312,0.7241,1450.2,-80.21,22.14,1.23
+0,1,0,1.5487,0.0071,0.0418,0.6812,1523.4,-80.85,21.52,-0.81
+0,2,0,1.3892,0.0045,0.0274,0.7523,1487.6,-80.12,22.87,2.04
+0,3,0,1.6234,0.0068,0.0356,0.6945,1612.8,-79.76,21.03,-1.52
+0,4,0,1.4501,0.0059,0.0289,0.7334,1538.1,-80.43,22.36,0.78
+0,5,0,1.5873,0.0082,0.0431,0.6589,1667.2,-81.02,20.84,-2.15
+0,6,0,1.2918,0.0038,0.0198,0.7812,1420.5,-79.34,23.12,1.67
+0,7,0,1.5064,0.0061,0.0337,0.7123,1554.9,-80.28,21.78,-0.43
+0,8,0,1.3725,0.0049,0.0261,0.7456,1478.3,-79.87,22.45,1.89
+0,9,0,1.4786,0.0057,0.0302,0.7289,1512.7,-80.51,22.03,-1.21
+1,0,0,1.6012,0.0073,0.0222,0.7247,1627.0,-79.60,21.92,-4.51
+1,1,0,1.5893,0.0034,0.0332,0.6125,1455.6,-81.22,24.65,4.66
+1,2,0,1.6331,0.0097,0.0171,0.7482,1205.8,-80.62,22.20,1.92
+1,3,0,1.4803,0.0080,0.0443,0.6990,1296.9,-80.92,23.47,-0.78
+1,4,0,1.4153,0.0075,0.0403,0.6434,1562.7,-80.21,21.25,-0.20
+1,5,0,1.4841,0.0050,0.0388,0.6310,1667.6,-78.40,20.22,-3.27
+1,6,0,1.1625,0.0035,0.0273,0.7763,1899.3,-79.76,20.55,2.23
+1,7,0,1.2106,0.0019,0.0351,0.6512,2082.8,-80.24,20.91,-2.27
+1,8,0,1.5462,0.0067,0.0245,0.7124,1512.3,-79.98,21.87,1.45
+1,9,0,1.4378,0.0054,0.0318,0.7034,1587.6,-80.34,22.51,-1.03
+2,0,0,1.4128,0.0063,0.0289,0.7345,1498.2,-80.15,22.34,1.12
+2,1,0,1.5634,0.0078,0.0345,0.6812,1556.7,-80.67,21.67,-0.94
+2,2,0,1.3217,0.0041,0.0234,0.7623,1423.5,-79.56,23.01,2.34
+2,3,0,1.5982,0.0085,0.0401,0.6543,1645.8,-81.13,20.78,-1.87
+2,4,0,1.4453,0.0058,0.0307,0.7187,1523.4,-80.02,22.12,0.67
+2,5,0,1.5128,0.0069,0.0356,0.6923,1578.9,-80.45,21.45,-1.34
+2,6,0,1.3672,0.0047,0.0251,0.7489,1445.2,-79.78,22.67,1.78
+2,7,0,1.8423,0.0421,0.1456,0.5912,1789.4,-85.34,16.23,-3.45
+2,8,0,3.2156,0.1234,0.2789,0.4523,2234.7,-92.67,11.34,-8.92
+2,9,1,7.8923,0.2678,0.4521,0.3421,2812.5,-97.23,6.78,-15.67
+3,0,0,1.3789,0.0051,0.0267,0.7512,1478.3,-79.89,22.56,0.89
+3,1,0,1.5243,0.0068,0.0321,0.6934,1545.6,-80.34,21.78,-0.67
+3,2,0,1.4021,0.0044,0.0212,0.7689,1432.8,-79.45,23.23,1.56
+3,3,0,1.5912,0.0077,0.0389,0.6723,1623.4,-80.89,21.12,-1.98
+3,4,0,1.4567,0.0059,0.0298,0.7234,1512.7,-80.12,22.34,0.45
+3,5,0,1.5012,0.0064,0.0334,0.7023,1567.8,-80.56,21.89,-1.12
+3,6,0,1.3245,0.0042,0.0245,0.7567,1456.9,-79.67,22.78,1.34
+3,7,0,1.5489,0.0071,0.0356,0.6878,1598.2,-80.78,21.34,-1.56
+3,8,0,1.3876,0.0048,0.0278,0.7412,1489.4,-79.92,22.45,1.01
+3,9,0,1.4923,0.0061,0.0312,0.7145,1534.6,-80.23,22.01,-0.78
+4,0,0,1.4356,0.0065,0.0301,0.7289,1512.4,-80.08,22.23,1.45
+4,1,0,1.5789,0.0079,0.0367,0.6712,1587.3,-80.67,21.56,-0.89
+4,2,0,1.3412,0.0043,0.0223,0.7623,1445.8,-79.56,23.12,2.01
+4,3,0,1.6123,0.0088,0.0412,0.6534,1678.9,-81.23,20.67,-2.12
+4,4,0,1.4678,0.0056,0.0289,0.7234,1534.2,-80.15,22.18,0.78
+4,5,0,1.5234,0.0072,0.0345,0.6987,1589.6,-80.45,21.67,-1.23
+4,6,0,1.3892,0.0049,0.0267,0.7456,1467.8,-79.78,22.56,1.56
+4,7,0,1.9234,0.0489,0.1678,0.5789,1823.5,-86.12,15.67,-3.78
+4,8,0,3.4567,0.1345,0.2987,0.4321,2289.3,-93.45,10.89,-9.34
+4,9,1,8.1234,0.2834,0.4678,0.3212,2856.7,-98.12,6.23,-16.23
+Degradation Signature in Blockage Sequences
+The final three frames of each blockage sequence (IDs 2 and 4) show the characteristic pre-blockage signature:
+
+Feature	Clear value	Frame 7	Frame 8	Frame 9 (blocked)
+rssi_dbm	−80	−85	−93	−97
+sinr_db	22	16	11	7
+rlc_delay_dl	1.4	1.9	3.2	7.9
+rlc_drop_rate	0.006	0.042	0.123	0.268
+harq_retx_ratio	0.03	0.15	0.28	0.45
+doppler_hz	±3	−3.5	−9	−16
+This is the signal the model learns to recognize. The predictor's job is to output high blockage_probability at frame 7 or 8 — before frame 9 — so downstream control can act in time.
+```
+
+### Dataset Statistics
+```
+From the reference generation run (--samples 20000 --seed 42):
+
+Statistic	Value
+Sequences	20,000
+Frames per sequence	11
+Total rows	220,000
+Positive sequences (blockage)	9,932 (49.7%)
+Negative sequences (clear)	10,068 (50.3%)
+CSV file size	~28 MB
+Class balance	Near 50/50 — no resampling required
+Regenerating the Dataset
+powershell
+# Training set — 20,000 sequences, seed 42
+python -m src.data.synthetic_generator --output data/synthetic_train.csv --samples 20000
+
+# Test set — 5,000 sequences, DIFFERENT seed (123) so the model has never seen it
+python -m src.data.synthetic_generator --output data/synthetic_test.csv --samples 5000 --seed 123
+The generator is fully deterministic given a seed. Two runs with the same --seed produce identical CSVs, which makes experiments reproducible.
+```
+
+
 ### Model training
 
 ```
