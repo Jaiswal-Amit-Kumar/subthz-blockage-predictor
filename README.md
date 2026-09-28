@@ -701,7 +701,31 @@ The prototype was verified on Python 3.14.6. If you encounter issues with newer 
 
 ## License
 
-MIT License. See `LICENSE` for details.
+This project is licensed under the **Apache License, Version 2.0**.
+
+You may obtain a copy of the License at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+### Patent Grant
+
+The Apache 2.0 license includes an express patent grant from all
+contributors. This is particularly relevant for this project given the
+active patent landscape around sub-THz beam management, RIS control,
+and predictive link adaptation. By using this license, contributors
+grant users a perpetual, worldwide, non-exclusive, royalty-free patent
+license covering their contributions.
+
+### Attribution
+
+If you use this software in academic work, please cite the repository
+and the HSE MIEM Trusted 6G Communication Systems initiative.
 
 ---
 
