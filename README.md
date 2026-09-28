@@ -1,4 +1,3 @@
-```markdown
 # Sub-THz Blockage Predictor
 
 An AI-driven link blockage prediction service for sub-THz (140–160 GHz) O-RAN testbeds.
@@ -581,4 +580,3 @@ MIT License. See `LICENSE` for details.
 Built to serve the HSE MIEM Trusted 6G Communication Systems initiative.
 
 For questions about integration with the HSE MIEM testbed, contact the laboratory directly. For bugs or feature requests in this prototype, open an issue in the repository.
-```
