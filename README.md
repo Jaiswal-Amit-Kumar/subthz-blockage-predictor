@@ -12,6 +12,7 @@ Designed for the HSE MIEM Telecommunications Research Institute and their Truste
 - [The Problem](#the-problem)
 - [The Solution](#the-solution)
 - [Verified Results](#verified-results)
+- [Dataset Schema and Sample](#dataset-schema-and-sample)
 - [Repository Structure](#repository-structure)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -89,29 +90,70 @@ Sequences: 20,000
 Positive sequences: 9,932
 ```
 
+### Model training
+
+```
+$ python -m src.model.train --data data/synthetic_train.csv --output models/blockage_lgbm.txt
+Loading data\synthetic_train.csv ...
+  Rows: 220,000  Sequences: 20,000
+Feature matrix: (40000, 85)  Positive rate: 0.497
+Training LightGBM (scale_pos_weight=1.02) ...
+Early stopping, best iteration is: [2]  valid_0's auc: 1
+AUC-ROC: 1.0000
+Accuracy: 1.0000
+              precision    recall  f1-score   support
+       clear       1.00      1.00      1.00      4002
+    blockage       1.00      1.00      1.00      3998
+```
+
+### Unit tests
+
+```
+$ pytest tests/ -v
+collected 7 items
+tests/test_feature_engineer.py ....... PASSED  [7/7]
+============================================= 7 passed in 1.35s ==============================================
+```
+
+### Interpretation of Results
+
+| Metric | Observed | Notes |
+|--------|----------|-------|
+| AUC-ROC | 1.0000 | Synthetic data is too separable — see caveat below |
+| Best iteration | 2 | Model converges almost immediately |
+| Dominant feature | `feature[72]` (gain=32,246) | Derived: std of RSSI sequence |
+| F1 (both classes) | 1.00 | Perfect separation on synthetic data |
+| Test suite | 7/7 | All unit tests green |
+
+> **Warning:** An AUC of 1.0000 on synthetic data is a red flag, not a triumph. The synthetic generator injects a clean, deterministic degradation ramp that is trivially separable. Real OAI telemetry will be noisy, non-stationary, and far harder to classify. The pipeline is correct; the synthetic dataset is simply too easy. See [Known Limitations](#known-limitations) for hardening steps.
+
+---
+
 ## Dataset Schema and Sample
 
 The synthetic generator produces a long-format CSV where each row is one KPM indication frame from one sequence. Sequences alternate between clear-path (label 0) and blockage (label 1 at the final frame only).
 
-
 ### Data Dictionary
-```
-Column	Type	Range (clear)	Range (blockage)	Description
-sequence_id	int	0 – 19,999	0 – 19,999	Which synthetic sequence this frame belongs to
-frame_idx	int	0 – 10	0 – 10	Position within the sequence
-label	int	0	0, except 1 at final frame	1 if blockage occurs within horizon
-rlc_delay_dl	float	1.1 – 1.7 ms	rises to 7 – 9 ms	RLC SDU downlink delay
-rlc_drop_rate	float	0.001 – 0.01	rises to 0.25 – 0.30	Fraction of RLC packets dropped
-harq_retx_ratio	float	0.01 – 0.05	rises to 0.45 – 0.50	HARQ retransmission ratio
-prb_utilization	float	0.60 – 0.85	drops to 0.30 – 0.45	Physical resource block utilization
-ue_buffer_occupancy	float	1200 – 2100 bytes	rises to 2200 – 2900	UE buffer occupancy
-rssi_dbm	float	−77 to −82 dBm	drops to −92 to −98 dBm	Received signal strength
-sinr_db	float	20 – 25 dB	drops to 6 – 11 dB	Signal-to-interference-plus-noise ratio
-doppler_hz	float	−6 to +5 Hz	−9 to −16 Hz	Doppler shift
-Sample Data (50 rows)
+
+| Column | Type | Range (clear) | Range (blockage) | Description |
+|--------|------|---------------|------------------|-------------|
+| `sequence_id` | int | 0 – 19,999 | 0 – 19,999 | Which synthetic sequence this frame belongs to |
+| `frame_idx` | int | 0 – 10 | 0 – 10 | Position within the sequence |
+| `label` | int | 0 | 0, except 1 at final frame | 1 if blockage occurs within horizon |
+| `rlc_delay_dl` | float | 1.1 – 1.7 ms | rises to 7 – 9 ms | RLC SDU downlink delay |
+| `rlc_drop_rate` | float | 0.001 – 0.01 | rises to 0.25 – 0.30 | Fraction of RLC packets dropped |
+| `harq_retx_ratio` | float | 0.01 – 0.05 | rises to 0.45 – 0.50 | HARQ retransmission ratio |
+| `prb_utilization` | float | 0.60 – 0.85 | drops to 0.30 – 0.45 | Physical resource block utilization |
+| `ue_buffer_occupancy` | float | 1200 – 2100 bytes | rises to 2200 – 2900 | UE buffer occupancy |
+| `rssi_dbm` | float | −77 to −82 dBm | drops to −92 to −98 dBm | Received signal strength |
+| `sinr_db` | float | 20 – 25 dB | drops to 6 – 11 dB | Signal-to-interference-plus-noise ratio |
+| `doppler_hz` | float | −6 to +5 Hz | −9 to −16 Hz | Doppler shift |
+
+### Sample Data (50 rows)
+
 Five representative sequences — three clear-path (IDs 0, 1, 3) and two blockage (IDs 2, 4). The degradation signature is visible in the final frames of the blockage sequences.
 
-csv
+```csv
 sequence_id,frame_idx,label,rlc_delay_dl,rlc_drop_rate,harq_retx_ratio,prb_utilization,ue_buffer_occupancy,rssi_dbm,sinr_db,doppler_hz
 0,0,0,1.3201,0.0052,0.0312,0.7241,1450.2,-80.21,22.14,1.23
 0,1,0,1.5487,0.0071,0.0418,0.6812,1523.4,-80.85,21.52,-0.81
@@ -163,79 +205,48 @@ sequence_id,frame_idx,label,rlc_delay_dl,rlc_drop_rate,harq_retx_ratio,prb_utili
 4,7,0,1.9234,0.0489,0.1678,0.5789,1823.5,-86.12,15.67,-3.78
 4,8,0,3.4567,0.1345,0.2987,0.4321,2289.3,-93.45,10.89,-9.34
 4,9,1,8.1234,0.2834,0.4678,0.3212,2856.7,-98.12,6.23,-16.23
-Degradation Signature in Blockage Sequences
+```
+
+### Degradation Signature in Blockage Sequences
+
 The final three frames of each blockage sequence (IDs 2 and 4) show the characteristic pre-blockage signature:
 
-Feature	Clear value	Frame 7	Frame 8	Frame 9 (blocked)
-rssi_dbm	−80	−85	−93	−97
-sinr_db	22	16	11	7
-rlc_delay_dl	1.4	1.9	3.2	7.9
-rlc_drop_rate	0.006	0.042	0.123	0.268
-harq_retx_ratio	0.03	0.15	0.28	0.45
-doppler_hz	±3	−3.5	−9	−16
-This is the signal the model learns to recognize. The predictor's job is to output high blockage_probability at frame 7 or 8 — before frame 9 — so downstream control can act in time.
-```
+| Feature | Clear value | Frame 7 | Frame 8 | Frame 9 (blocked) |
+|---------|:---:|:---:|:---:|:---:|
+| `rssi_dbm` | −80 | −85 | −93 | −97 |
+| `sinr_db` | 22 | 16 | 11 | 7 |
+| `rlc_delay_dl` | 1.4 | 1.9 | 3.2 | 7.9 |
+| `rlc_drop_rate` | 0.006 | 0.042 | 0.123 | 0.268 |
+| `harq_retx_ratio` | 0.03 | 0.15 | 0.28 | 0.45 |
+| `doppler_hz` | ±3 | −3.5 | −9 | −16 |
+
+This is the signal the model learns to recognize. The predictor's job is to output high `blockage_probability` at **frame 7 or 8** — before frame 9 — so downstream control can act in time.
 
 ### Dataset Statistics
 
-From the reference generation run (--samples 20000 --seed 42):
+From the reference generation run (`--samples 20000 --seed 42`):
 
-```
-Statistic	Value
-Sequences	20,000
-Frames per sequence	11
-Total rows	220,000
-Positive sequences (blockage)	9,932 (49.7%)
-Negative sequences (clear)	10,068 (50.3%)
-CSV file size	~28 MB
-Class balance	Near 50/50 — no resampling required
-Regenerating the Dataset
-powershell
+| Statistic | Value |
+|-----------|-------|
+| Sequences | 20,000 |
+| Frames per sequence | 11 |
+| Total rows | 220,000 |
+| Positive sequences (blockage) | 9,932 (49.7%) |
+| Negative sequences (clear) | 10,068 (50.3%) |
+| CSV file size | ~28 MB |
+| Class balance | Near 50/50 — no resampling required |
+
+### Regenerating the Dataset
+
+```powershell
 # Training set — 20,000 sequences, seed 42
 python -m src.data.synthetic_generator --output data/synthetic_train.csv --samples 20000
 
 # Test set — 5,000 sequences, DIFFERENT seed (123) so the model has never seen it
 python -m src.data.synthetic_generator --output data/synthetic_test.csv --samples 5000 --seed 123
-The generator is fully deterministic given a seed. Two runs with the same --seed produce identical CSVs, which makes experiments reproducible.
 ```
 
-
-### Model training
-
-```
-$ python -m src.model.train --data data/synthetic_train.csv --output models/blockage_lgbm.txt
-Loading data\synthetic_train.csv ...
-  Rows: 220,000  Sequences: 20,000
-Feature matrix: (40000, 85)  Positive rate: 0.497
-Training LightGBM (scale_pos_weight=1.02) ...
-Early stopping, best iteration is: [2]  valid_0's auc: 1
-AUC-ROC: 1.0000
-Accuracy: 1.0000
-              precision    recall  f1-score   support
-       clear       1.00      1.00      1.00      4002
-    blockage       1.00      1.00      1.00      3998
-```
-
-### Unit tests
-
-```
-$ pytest tests/ -v
-collected 7 items
-tests/test_feature_engineer.py ....... PASSED  [7/7]
-============================================= 7 passed in 1.35s ==============================================
-```
-
-### Interpretation of Results
-
-| Metric | Observed | Notes |
-|--------|----------|-------|
-| AUC-ROC | 1.0000 | Synthetic data is too separable — see caveat below |
-| Best iteration | 2 | Model converges almost immediately |
-| Dominant feature | `feature[72]` (gain=32,246) | Derived: std of RSSI sequence |
-| F1 (both classes) | 1.00 | Perfect separation on synthetic data |
-| Test suite | 7/7 | All unit tests green |
-
-> **Warning:** An AUC of 1.0000 on synthetic data is a red flag, not a triumph. The synthetic generator injects a clean, deterministic degradation ramp that is trivially separable. Real OAI telemetry will be noisy, non-stationary, and far harder to classify. The pipeline is correct; the synthetic dataset is simply too easy. See [Known Limitations](#known-limitations) for hardening steps.
+The generator is fully deterministic given a seed. Two runs with the same `--seed` produce identical CSVs, which makes experiments reproducible.
 
 ---
 
@@ -261,7 +272,8 @@ subthz-blockage-predictor/
 │   ├── test_feature_engineer.py
 │   └── test_predict.py
 ├── data/
-│   └── synthetic_train.csv          # Generated dataset
+│   ├── synthetic_train.csv          # Generated training dataset (20,000 sequences)
+│   └── synthetic_test.csv           # Generated test dataset (5,000 sequences)
 ├── requirements.txt
 └── README.md
 ```
@@ -314,22 +326,25 @@ httpx>=0.25
 
 ## Quick Start
 
-Five commands from a clean checkout to a running prediction service:
+Commands from a clean checkout to a running prediction service:
 
 ```powershell
-# 1. Generate 20,000 synthetic training sequences
+# 1. Generate 20,000 synthetic training sequences (seed 42)
 python -m src.data.synthetic_generator --output data/synthetic_train.csv --samples 20000
 
-# 2. Train the LightGBM classifier
+# 2. Generate 5,000 held-out test sequences (DIFFERENT seed 123)
+python -m src.data.synthetic_generator --output data/synthetic_test.csv --samples 5000 --seed 123
+
+# 3. Train the LightGBM classifier on the training set
 python -m src.model.train --data data/synthetic_train.csv --output models/blockage_lgbm.txt
 
-# 3. Evaluate on the training set (for a quick sanity check)
-python -m src.model.evaluate --model models/blockage_lgbm.txt --data data/synthetic_train.csv
+# 4. Evaluate on the HELD-OUT test set (not the training set!)
+python -m src.model.evaluate --model models/blockage_lgbm.txt --data data/synthetic_test.csv
 
-# 4. Run the unit tests
+# 5. Run the unit tests
 pytest tests/ -v
 
-# 5. Launch the prediction API
+# 6. Launch the prediction API
 uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -342,6 +357,8 @@ curl -X POST http://localhost:8000/predict ^
 ```
 
 Note: Once 10 frames have been submitted, the response will include a `blockage_probability` and, if the threshold is crossed, a `trigger_action`.
+
+Important: Step 4 must use `synthetic_test.csv`, not `synthetic_train.csv`. Evaluating on the training set produces a misleadingly perfect AUC of 1.0000 because the model has already memorized those sequences. See [Known Limitations](#known-limitations) for details.
 
 ---
 
@@ -601,7 +618,7 @@ Please read this section before drawing conclusions from the reported metrics.
 
 1. **Synthetic data is too easy.** The observed AUC of 1.0000 reflects the generator's deterministic degradation ramp, not real-world performance. Real OAI telemetry includes multipath, thermal noise, scheduling jitter, and non-blockage-driven degradation that will substantially reduce accuracy.
 
-2. **Evaluation was performed on training data.** The `evaluate.py` invocation in the Quick Start uses `data/synthetic_train.csv`, which the model has already seen. For a meaningful evaluation, generate a separate test set with a different `--seed`.
+2. **Evaluation must use a held-out test set.** The Quick Start now generates a separate test set (`synthetic_test.csv`, seed 123) that the model has never seen. Never evaluate on `synthetic_train.csv` — it produces a misleadingly perfect score.
 
 3. **No real telemetry yet.** The pipeline has not been validated against live E2SM-KPM indications from an OAI gNB. That integration is the next milestone (P5–P6).
 
@@ -689,5 +706,3 @@ MIT License. See `LICENSE` for details.
 ---
 
 Built to serve the HSE MIEM Trusted 6G Communication Systems initiative.
-
-For questions about integration with the HSE MIEM testbed, contact the laboratory directly. For bugs or feature requests in this prototype, open an issue in the repository.
