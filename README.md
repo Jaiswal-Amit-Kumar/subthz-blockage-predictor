@@ -93,8 +93,9 @@ Positive sequences: 9,932
 
 The synthetic generator produces a long-format CSV where each row is one KPM indication frame from one sequence. Sequences alternate between clear-path (label 0) and blockage (label 1 at the final frame only).
 
-```
+
 ### Data Dictionary
+```
 Column	Type	Range (clear)	Range (blockage)	Description
 sequence_id	int	0 – 19,999	0 – 19,999	Which synthetic sequence this frame belongs to
 frame_idx	int	0 – 10	0 – 10	Position within the sequence
@@ -176,9 +177,10 @@ This is the signal the model learns to recognize. The predictor's job is to outp
 ```
 
 ### Dataset Statistics
-```
+
 From the reference generation run (--samples 20000 --seed 42):
 
+```
 Statistic	Value
 Sequences	20,000
 Frames per sequence	11
